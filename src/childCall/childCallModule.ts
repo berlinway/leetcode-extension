@@ -502,20 +502,10 @@ class ExecuteService implements Disposable {
       });
 
       if (cf_v && ls_v) {
-        let cf_v_t = cf_v.trim();
-        let ls_v_t = ls_v.trim();
-        // 判断输入的有没有 " '
-        let cf_flag = cf_v_t[0] == '"' || cf_v_t[0] == "'";
-        let ls_flag = ls_v_t[0] == '"' || ls_v_t[0] == "'";
-        if (cf_flag && ls_flag) {
-          pwd = `csrftoken=${cf_v_t};LEETCODE_SESSION=${ls_v_t};`;
-        } else if (cf_flag) {
-          pwd = `csrftoken=${cf_v_t};LEETCODE_SESSION="${ls_v_t}";`;
-        } else if (ls_flag) {
-          pwd = `csrftoken="${cf_v_t}";LEETCODE_SESSION=${ls_v_t};`;
-        } else {
-          pwd = `csrftoken="${cf_v_t}";LEETCODE_SESSION="${ls_v_t}";`;
-        }
+        // Normalize to raw cookie values because quoted values can be rejected by endpoint checks.
+        let cf_v_t = cf_v.trim().replace(/^['"]|['"]$/g, "");
+        let ls_v_t = ls_v.trim().replace(/^['"]|['"]$/g, "");
+        pwd = `csrftoken=${cf_v_t};LEETCODE_SESSION=${ls_v_t};`;
       }
       // csrftoken="xxxx"; LEETCODE_SESSION="xxxx";
     } else if (arg.loginMethod === "curltype") {

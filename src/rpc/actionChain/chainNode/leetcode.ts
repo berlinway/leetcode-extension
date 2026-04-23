@@ -778,8 +778,11 @@ and csrf token to the user object and saves the user object to the session. */
         // reply.warn("Failed to retrieve user favorites: " + e);
       }
 
-      that.getUserInfo(function (e, _user) {
-        if (!e) {
+      that.getUserInfo(function (e2, _user) {
+        if (e2) {
+          return cb(e2);
+        }
+        if (_user) {
           user.paid = _user.isCurrentUserPremium;
           user.name = _user.username;
         }
@@ -807,8 +810,8 @@ and csrf token to the user object and saves the user object to the session. */
       return cb("invalid cookie?");
     }
     return {
-      sessionId: reSessionResult[1],
-      sessionCSRF: reCsrfResult[1],
+      sessionId: reSessionResult[1].trim().replace(/^['"]|['"]$/g, ""),
+      sessionCSRF: reCsrfResult[1].trim().replace(/^['"]|['"]$/g, ""),
     };
   };
   /* A function that is used to login to leetcode. */
@@ -1327,8 +1330,20 @@ function signOpts(opts, user) {
 function checkError(e, resp, expectedStatus) {
   if (!e && resp && (resp.statusCode || resp.status) !== expectedStatus) {
     const code = (resp.statusCode || resp.status);
+    const server =
+      resp?.headers?.server ||
+      resp?.headers?.get?.("server") ||
+      "";
+    const cfRay =
+      resp?.headers?.["cf-ray"] ||
+      resp?.headers?.get?.("cf-ray");
 
-    if (code === 403 || code === 401) {
+    if (code === 403 && (cfRay || String(server).toLowerCase().includes("cloudflare"))) {
+      e = {
+        msg: "Cloudflare verification required. Please use cURL login (lcpr.signin -> curltype).",
+        statusCode: code,
+      };
+    } else if (code === 403 || code === 401) {
       e = sessionUtils.errors.EXPIRED;
     } else {
       e = { msg: "http error", statusCode: code };

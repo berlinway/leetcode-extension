@@ -496,8 +496,20 @@ function makeOpts(url: any) {
 function checkError(e: any, resp: any, expectedStatus: any) {
   if (!e && resp && resp.statusCode !== expectedStatus) {
     const code = resp.statusCode;
+    const server =
+      resp?.headers?.server ||
+      resp?.headers?.get?.("server") ||
+      "";
+    const cfRay =
+      resp?.headers?.["cf-ray"] ||
+      resp?.headers?.get?.("cf-ray");
 
-    if (code === 403 || code === 401) {
+    if (code === 403 && (cfRay || String(server).toLowerCase().includes("cloudflare"))) {
+      e = {
+        msg: "Cloudflare verification required. Please use cURL login (lcpr.signin -> curltype).",
+        statusCode: code,
+      };
+    } else if (code === 403 || code === 401) {
       e = sessionUtils.errors.EXPIRED;
     } else {
       e = { msg: "http error", statusCode: code };
