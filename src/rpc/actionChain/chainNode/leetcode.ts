@@ -857,19 +857,46 @@ and csrf token to the user object and saves the user object to the session. */
   curlcookieLogin = (user, cb) => {
 
     if (configUtils.isCN()) {
-      const curl = parseCurl(user.curl_data || "");
-      const cookieHeader = curl?.header?.cookie || curl?.header?.Cookie || "";
-      const cookieData = this.parseCookie(cookieHeader, cb);
+      const curlData = user.curl_data || "";
+      let curl: any;
+      try {
+        curl = parseCurl(curlData);
+      } catch (_) {
+        return cb("invalid curl data?");
+      }
+
+      const headers = curl?.header || {};
+      const cookieHeader =
+        headers.cookie || headers.Cookie || headers["Set-Cookie"] || headers["set-cookie"] || "";
+      const rawCookieMatch = curlData.match(/(?:^|\\s)(?:-b|--cookie)\\s+(?:\\$)?(['"])([\\s\\S]*?)\\1/);
+      const rawCookie = (rawCookieMatch?.[2] || cookieHeader || "").trim();
+      let cookieData = this.parseCookie(rawCookie, cb);
       if (!cookieData) {
-        return;
+        const csrf = /(?:^|[;\\s])csrftoken=([^;\\s'"]+)/.exec(curlData);
+        const session = /(?:^|[;\\s])LEETCODE_SESSION=([^;\\s'"]+)/.exec(curlData);
+        if (!(csrf && session)) {
+          return;
+        }
+        cookieData = {
+          sessionId: session[1],
+          sessionCSRF: csrf[1],
+        };
       }
       user.sessionId = cookieData.sessionId;
       user.sessionCSRF = cookieData.sessionCSRF;
-      user.rawCookie = cookieHeader;
+      user.rawCookie = rawCookie || ("LEETCODE_SESSION=" + user.sessionId + ";csrftoken=" + user.sessionCSRF + ";");
       sessionUtils.saveUser(user);
       this.getUser(user, cb);
     } else {
       const curl = parseCurl(user.curl_data)
+      if (curl.header["Set-Cookie"] && !curl.header.cookie) {
+        curl.header.cookie = curl.header["Set-Cookie"];
+        delete curl.header["Set-Cookie"];
+      }
+      if (curl.header["set-cookie"] && !curl.header.cookie) {
+        curl.header.cookie = curl.header["set-cookie"];
+        delete curl.header["set-cookie"];
+      }
       if (curl.header.referer) delete curl.header.referer
       if (curl.header.Referer) delete curl.header.Referer
       user.my_us_header = curl.header
