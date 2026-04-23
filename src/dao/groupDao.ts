@@ -61,7 +61,14 @@ class GroupDao {
       return {};
     }
     let temp_data = await fse.readFile(lcpr_data_path, "utf8");
-    return JSON.parse(temp_data) || {};
+    if (!temp_data || !temp_data.trim()) {
+      return {};
+    }
+    try {
+      return JSON.parse(temp_data) || {};
+    } catch (_) {
+      return {};
+    }
   }
 
   // 获取所有分组

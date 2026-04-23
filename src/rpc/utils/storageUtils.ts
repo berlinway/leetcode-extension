@@ -218,7 +218,11 @@ class StorageUtils {
           data = require(fullpath).pluginObj;
           break;
         case ".json":
-          data = JSON.parse(that.getData(fullpath));
+          try {
+            data = JSON.parse(that.getData(fullpath));
+          } catch (_) {
+            data = null;
+          }
           break;
       }
       return { name: name, data: data, file: f };
@@ -238,7 +242,13 @@ class StorageUtils {
     const fullpath = this.cacheFile(k);
     if (!this.exist(fullpath)) return null;
 
-    return JSON.parse(this.getData(fullpath));
+    const raw = this.getData(fullpath);
+    if (!raw || !raw.trim()) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (_) {
+      return null;
+    }
   }
 
   public setCache(k, v) {

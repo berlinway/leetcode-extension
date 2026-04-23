@@ -553,7 +553,13 @@ class TreeViewController implements Disposable {
         BABA.getProxy(BabaStr.SolutionProxy).show(hints, true);
       }
     } catch (error) {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      const msg =
+        error instanceof Error
+          ? error.stack || error.message
+          : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(msg);
       await ShowMessage("Failed to fetch the top voted solution. 请查看控制台信息~", OutPutType.error);
     }
   }
@@ -815,7 +821,13 @@ class TreeViewController implements Disposable {
       const tt: userContestRanKingBase = Object.assign({}, userContestRankingObj, query_result.userContestRanking);
       BABA.sendNotification(BabaStr.TreeData_searchUserContest, tt);
     } catch (error) {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      const msg =
+        error instanceof Error
+          ? error.stack || error.message
+          : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(msg);
       await ShowMessage("Failed to fetch today question. 请查看控制台信息~", OutPutType.error);
     }
   }

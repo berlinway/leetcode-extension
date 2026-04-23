@@ -69,7 +69,12 @@ class DebugService {
       clientSock.setEncoding("utf8");
 
       clientSock.on("data", async (data: Buffer) => {
-        const result: IDebugResult = JSON.parse(data.toString());
+        let result: IDebugResult;
+        try {
+          result = JSON.parse(data.toString());
+        } catch (_) {
+          return;
+        }
         if (result.type === "error") {
           ShowMessage(result.message, OutPutType.error);
         } else {
@@ -77,12 +82,16 @@ class DebugService {
       });
 
       clientSock.on("error", (error: Error) => {
-        BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+        BABA.getProxy(BabaStr.LogOutputProxy)
+          .get_log()
+          .appendLine(error.stack || error.message || error.toString());
       });
     });
 
     this.server.on("error", (error: Error) => {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      BABA.getProxy(BabaStr.LogOutputProxy)
+        .get_log()
+        .appendLine(error.stack || error.message || error.toString());
     });
 
     // listen on a random port

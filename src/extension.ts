@@ -237,7 +237,13 @@ export async function activate(context: ExtensionContext): Promise<void> {
     await BABA.sendNotificationAsync(BabaStr.InitLoginStatus);
     await BABA.sendNotificationAsync(BabaStr.StartReadData);
   } catch (error) {
-    BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+    const msg =
+      error instanceof Error
+        ? error.stack || error.message
+        : typeof error === "string"
+        ? error
+        : JSON.stringify(error);
+    BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(msg);
     ShowMessage("Extension initialization failed. Please open output channel for details.", OutPutType.error);
   } finally {
     lcpr_timer_sec = setInterval(() => {

@@ -149,7 +149,19 @@ class PreviewService extends BaseWebViewService {
   }
 
   private parseDescription(descString: string, problem: TreeNodeModel): IDescription {
-    let preview_data = JSON.parse(descString);
+    let preview_data: any = {};
+    try {
+      preview_data = JSON.parse(descString);
+    } catch (_) {
+      preview_data = {
+        url: "",
+        category: "",
+        difficulty: "",
+        likes: 0,
+        dislikes: 0,
+        desc: descString || "",
+      };
+    }
     return {
       title: problem.name,
       url: preview_data.url,

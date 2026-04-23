@@ -215,7 +215,15 @@ class SubmissionService extends BaseWebViewService {
   }
 
   private parseResult(raw: string): IResult {
-    let temp = JSON.parse(raw);
+    let temp: any;
+    try {
+      temp = JSON.parse(raw);
+    } catch (_) {
+      return {
+        messages: ["Failed to parse submit result"],
+        system_message: {} as any,
+      } as IResult;
+    }
 
     // 当结果是正确的时候,不用判断上色
     if (temp?.system_message?.accepted) {

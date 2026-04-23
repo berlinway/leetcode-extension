@@ -149,7 +149,12 @@ class SolutionService extends BaseWebViewService {
   }
 
   private parseSolution(raw: string): Solution {
-    let obj = JSON.parse(raw);
+    let obj: any = {};
+    try {
+      obj = JSON.parse(raw);
+    } catch (_) {
+      return new Solution();
+    }
     let solution: Solution = new Solution();
     if (obj.code == 100 && obj.solution) {
       this.problemName = obj.solution.problem_name;
@@ -166,7 +171,12 @@ class SolutionService extends BaseWebViewService {
     return solution;
   }
   private parseHints(raw: string): Array<string> {
-    let obj = JSON.parse(raw);
+    let obj: any = {};
+    try {
+      obj = JSON.parse(raw);
+    } catch (_) {
+      return [];
+    }
 
     if (obj.code == 100) {
       return obj.hints;
