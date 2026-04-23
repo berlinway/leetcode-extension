@@ -475,6 +475,20 @@ function signOpts(opts: any, user: any) {
   if (!user) {
     return;
   }
+  if (user.my_cn_header) {
+    opts.headers = { ...user.my_cn_header };
+    const rawCookie = user.rawCookie || opts.headers.cookie || opts.headers.Cookie;
+    if (rawCookie) {
+      opts.headers.Cookie = rawCookie;
+      delete opts.headers.cookie;
+    }
+    if (user.sessionCSRF) {
+      opts.headers["X-CSRFToken"] = user.sessionCSRF;
+      opts.headers["x-csrftoken"] = user.sessionCSRF;
+      opts.headers["X-Requested-With"] = "XMLHttpRequest";
+    }
+    return;
+  }
   const rawCookie = user.rawCookie;
   opts.headers.Cookie = rawCookie || ("LEETCODE_SESSION=" + user.sessionId + ";csrftoken=" + user.sessionCSRF + ";");
   opts.headers["X-CSRFToken"] = user.sessionCSRF;

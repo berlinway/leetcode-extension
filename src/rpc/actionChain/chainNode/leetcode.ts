@@ -865,7 +865,13 @@ and csrf token to the user object and saves the user object to the session. */
         return cb("invalid curl data?");
       }
 
-      const headers = curl?.header || {};
+      const headers = { ...(curl?.header || {}) };
+      if (headers["Set-Cookie"] && !headers.cookie) {
+        headers.cookie = headers["Set-Cookie"];
+      }
+      if (headers["set-cookie"] && !headers.cookie) {
+        headers.cookie = headers["set-cookie"];
+      }
       const cookieHeader =
         headers.cookie || headers.Cookie || headers["Set-Cookie"] || headers["set-cookie"] || "";
       const rawCookieMatch = curlData.match(/(?:^|\\s)(?:-b|--cookie)\\s+(?:\\$)?(['"])([\\s\\S]*?)\\1/);
@@ -885,6 +891,7 @@ and csrf token to the user object and saves the user object to the session. */
       user.sessionId = cookieData.sessionId;
       user.sessionCSRF = cookieData.sessionCSRF;
       user.rawCookie = rawCookie || ("LEETCODE_SESSION=" + user.sessionId + ";csrftoken=" + user.sessionCSRF + ";");
+      user.my_cn_header = headers;
       sessionUtils.saveUser(user);
       this.getUser(user, cb);
     } else {
@@ -1347,6 +1354,21 @@ function makeOpts(url) {
 
 function signOpts(opts, user) {
   if (!user) {
+    return;
+  }
+
+  if (user.my_cn_header) {
+    opts.headers = { ...user.my_cn_header };
+    const rawCookie = user.rawCookie || opts.headers.cookie || opts.headers.Cookie;
+    if (rawCookie) {
+      opts.headers.Cookie = rawCookie;
+      delete opts.headers.cookie;
+    }
+    if (user.sessionCSRF) {
+      opts.headers["X-CSRFToken"] = user.sessionCSRF;
+      opts.headers["x-csrftoken"] = user.sessionCSRF;
+      opts.headers["X-Requested-With"] = "XMLHttpRequest";
+    }
     return;
   }
 
