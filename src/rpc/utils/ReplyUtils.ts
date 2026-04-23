@@ -44,23 +44,49 @@ class Reply {
     this.setLevel("INFO");
   }
 
+  private formatArg(value: any): string {
+    if (value === undefined) {
+      return "undefined";
+    }
+    if (value === null) {
+      return "null";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    if (Buffer.isBuffer(value)) {
+      return value.toString();
+    }
+    if (value instanceof Error) {
+      return value.stack || value.message || value.toString();
+    }
+    if (typeof value === "object") {
+      try {
+        return JSON.stringify(value);
+      } catch (_) {
+        return value.toString();
+      }
+    }
+    return value.toString();
+  }
+
   info(...rest: any[]) {
     const args = rest; //Array.from(arguments);
-    let s = args.map((x) => x.toString()).join(" ");
+    let s = args.map((x) => this.formatArg(x)).join(" ");
     this.output(s);
   }
   warn(...rest: any[]) {
     const args = rest; //Array.from(arguments);
     args.unshift("[" + "warn" + "]");
 
-    let s = args.map((x) => x.toString()).join(" ");
+    let s = args.map((x) => this.formatArg(x)).join(" ");
     this.output(s);
   }
   error(...rest: any[]) {
     const args = rest; //Array.from(arguments);
     args.unshift("[" + "error" + "]");
 
-    let s = args.map((x) => x.toString()).join(" ");
+    let s = args.map((x) => this.formatArg(x)).join(" ");
     this.output(s);
   }
 
@@ -73,7 +99,13 @@ class Reply {
   }
 
   recvCallback(data) {
-    let data_ob = JSON.parse(data);
+    let data_ob;
+    try {
+      data_ob = JSON.parse(data);
+    } catch (e) {
+      this.error("recvCallback parse error", e);
+      return;
+    }
     let c = data_ob.c;
     let need_call = this.operWaitMap.get(c);
     if (need_call) {

@@ -500,35 +500,72 @@ server to get the problem's description, test cases, and other information. */
   };
 
   h2request = {
-    h2core(opts, cb) {
-      cookieJar.setCookies(
-        opts?.headers?.cookie?.split?.(';') || [],
-        configUtils.sys.urls.base
-      ).then(() => {
-        if (opts?.headers?.cookie) delete opts.headers.cookie
-        if (opts?.headers?.Cookie) delete opts.headers.Cookie
-        opts.allowForbiddenHeaders = true
-        opts.timeout = 10000
-        return fetch(opts.url, opts).then(function (response) {
-          if (!response.ok) {
-            const c = `HTTP ${opts.method} error with opts: ${JSON.stringify(opts)} Response: ${JSON.stringify(response)}`
-            return cb(new Error(c))
-          }
-          // Save new "Set-Cookie" cookies to cache
-          const user = sessionUtils.getUser()
-          user.my_us_header.cookie = myJar.getCookieStringSync(opts.url)
-          sessionUtils.saveUser(user);
+    fallbackWithRequest(opts, cb, reason?) {
+      const fallbackReason = reason;
+      const fallbackOpts: any = {
+        url: opts.url,
+        method: opts.method,
+        headers: opts.headers || {},
+        timeout: opts.timeout || 10000,
+        json: true,
+      };
+      if (opts.method === "POST" && opts.json) {
+        fallbackOpts.body = opts.json;
+      }
 
-          if (!response.json) {
-            const c = `HTTP ${opts.method} didn't respond with JSON opts: ${JSON.stringify(opts)} Response: ${JSON.stringify(response)}`
-            cb(new Error(c))
-          } else {
-            response.json().then((data) => {
-              cb(null, response, data)
-            })
+      request(fallbackOpts, function (e, resp, body) {
+        if (e) return cb(e);
+        if (fallbackReason) {
+          // Keep reason available for debugging without polluting stdout protocol.
+        }
+        return cb(null, resp, body);
+      });
+    },
+    h2core(opts, cb) {
+      cookieJar
+        .setCookies(opts?.headers?.cookie?.split?.(";") || [], configUtils.sys.urls.base)
+        .then(() => {
+          if (opts?.headers?.cookie) delete opts.headers.cookie;
+          if (opts?.headers?.Cookie) delete opts.headers.Cookie;
+          opts.allowForbiddenHeaders = true;
+          opts.timeout = 10000;
+          return fetch(opts.url, opts);
+        })
+        .then(async (response) => {
+          if (!response.ok) {
+            const c = `HTTP ${opts.method} error with opts: ${JSON.stringify(opts)} Response: ${JSON.stringify(response)}`;
+            return this.fallbackWithRequest(opts, cb, c);
+          }
+
+          // Save new "Set-Cookie" cookies to cache.
+          const user = sessionUtils.getUser();
+          if (user?.my_us_header) {
+            user.my_us_header.cookie = myJar.getCookieStringSync(opts.url);
+            sessionUtils.saveUser(user);
+          }
+
+          let rawData = "";
+          try {
+            rawData = await response.text();
+          } catch (e) {
+            return cb(e);
+          }
+
+          if (!rawData || !rawData.trim()) {
+            const c = `HTTP ${opts.method} empty JSON body from ${opts.url}`;
+            return this.fallbackWithRequest(opts, cb, c);
+          }
+
+          try {
+            const data = JSON.parse(rawData);
+            return cb(null, response, data);
+          } catch (e) {
+            const message = e?.message || e;
+            const c = `HTTP ${opts.method} invalid JSON from ${opts.url}: ${message}`;
+            return this.fallbackWithRequest(opts, cb, c);
           }
         })
-      })
+        .catch((e) => this.fallbackWithRequest(opts, cb, e?.message || e));
     },
     post(opts, cb) {
       opts.method = 'POST'
