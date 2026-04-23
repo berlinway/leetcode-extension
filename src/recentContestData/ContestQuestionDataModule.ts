@@ -16,6 +16,20 @@ class ContestQuestionData {
 
 const contestQuestionData: ContestQuestionData = new ContestQuestionData();
 
+function formatError(error: any): string {
+  if (error instanceof Error) {
+    return error.stack || error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch (_) {
+    return String(error);
+  }
+}
+
 export class ContestQuestionProxy extends BABAProxy {
   static NAME = BabaStr.ContestQuestionProxy;
   constructor() {
@@ -48,7 +62,7 @@ export class ContestQuestionProxy extends BABAProxy {
       }
       BABA.sendNotification(BabaStr.TreeData_searchContestQuestionFinish);
     } catch (error) {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(formatError(error));
       await ShowMessage("Failed to fetch question of" + contestName + ". 请查看控制台信息~", OutPutType.error);
     }
   }

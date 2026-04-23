@@ -18,6 +18,20 @@ class RecentContestData {
 
 const recentContestData: RecentContestData = new RecentContestData();
 
+function formatError(error: any): string {
+  if (error instanceof Error) {
+    return error.stack || error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch (_) {
+    return String(error);
+  }
+}
+
 export class RecentContestProxy extends BABAProxy {
   static NAME = BabaStr.RecentContestProxy;
   constructor() {
@@ -79,7 +93,7 @@ export class RecentContestProxy extends BABAProxy {
         BABA.sendNotification(BabaStr.TreeData_searchRecentContestFinish);
       }
     } catch (error) {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(formatError(error));
       await ShowMessage("Failed to fetch recent contest list. 请查看控制台信息~", OutPutType.error);
     }
   }

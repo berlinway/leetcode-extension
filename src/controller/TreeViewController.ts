@@ -561,7 +561,13 @@ class TreeViewController implements Disposable {
   public async testapi(): Promise<void> {
     try {
     } catch (error) {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      const msg =
+        error instanceof Error
+          ? error.stack || error.message
+          : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(msg);
       await ShowMessage("Failed to fetch today question. 请查看控制台信息~", OutPutType.error);
     }
   }

@@ -40,6 +40,16 @@ class LeetCode extends ChainNodeBase {
     configUtils.app = "leetcode";
   }
 
+  private parseJsonOrError(raw: any, field: string) {
+    if (raw && typeof raw === "object") {
+      return raw;
+    }
+    if (typeof raw !== "string" || raw.trim().length === 0) {
+      throw new Error(`${field}: empty JSON body`);
+    }
+    return JSON.parse(raw);
+  }
+
   getProblems = (_, cb) => {
     let that = this;
     let problems = [];
@@ -62,6 +72,7 @@ class LeetCode extends ChainNodeBase {
 
   /* Getting the problems from the category. */
   getCategoryProblems = (category, cb) => {
+    const that = this;
     const opts = makeOpts(configUtils.sys.urls.problems.replace("$category", category));
 
     if (configUtils.isCN()) {
@@ -69,7 +80,12 @@ class LeetCode extends ChainNodeBase {
         e = checkError(e, resp, 200);
         if (e) return cb(e);
 
-        const json = JSON.parse(body);
+        let json;
+        try {
+          json = that.parseJsonOrError(body, "getCategoryProblems");
+        } catch (parseError) {
+          return cb(parseError);
+        }
 
         if (json.user_name.length === 0) {
           return cb(sessionUtils.errors.EXPIRED);
@@ -290,7 +306,12 @@ server to get the problem's description, test cases, and other information. */
         e = checkError(e, resp, 200);
         if (e) return cb(e);
 
-        let result = JSON.parse(body);
+        let result;
+        try {
+          result = that.parseJsonOrError(body, "verifyResult");
+        } catch (parseError) {
+          return cb(parseError);
+        }
         if (result.state === "SUCCESS") {
           result = that.formatResult(result);
           underscore.extendOwn(result, task);
@@ -403,6 +424,7 @@ server to get the problem's description, test cases, and other information. */
 
   /* Getting the submissions for a problem. */
   getSubmissions = (problem, cb) => {
+    const that = this;
     const opts = makeOpts(configUtils.sys.urls.submissions.replace("$slug", problem.slug));
     opts.headers.Referer = configUtils.sys.urls.problem.replace("$slug", problem.slug);
 
@@ -412,7 +434,13 @@ server to get the problem's description, test cases, and other information. */
         if (e) return cb(e);
 
         // FIXME: this only return the 1st 20 submissions, we should get next if necessary.
-        const submissions = JSON.parse(body).submissions_dump;
+        let parsedBody;
+        try {
+          parsedBody = that.parseJsonOrError(body, "getSubmissions.cn");
+        } catch (parseError) {
+          return cb(parseError);
+        }
+        const submissions = parsedBody.submissions_dump;
         for (const submission of submissions)
           submission.id = underscore.last(underscore.compact(submission.url.split("/")));
 
@@ -424,7 +452,8 @@ server to get the problem's description, test cases, and other information. */
         if (e) return cb(e);
 
         // FIXME: this only return the 1st 20 submissions, we should get next if necessary.
-        const submissions = JSON.parse(body).submissions_dump;
+        const parsedBody = (typeof body === "string") ? that.parseJsonOrError(body, "getSubmissions.us") : body;
+        const submissions = parsedBody.submissions_dump;
         for (const submission of submissions)
           submission.id = underscore.last(underscore.compact(submission.url.split('/')));
 
@@ -580,6 +609,7 @@ server to get the problem's description, test cases, and other information. */
 
   /* Making a request to the server to get the favorites. */
   getFavorites = (cb: any) => {
+    const that = this;
 
     const opts = makeOpts(configUtils.sys.urls.favorites);
     if (!configUtils.isCN()) {
@@ -593,7 +623,12 @@ server to get the problem's description, test cases, and other information. */
         e = checkError(e, resp, 200);
         if (e) return cb(e);
 
-        const favorites = JSON.parse(body);
+        let favorites;
+        try {
+          favorites = that.parseJsonOrError(body, "getFavorites");
+        } catch (parseError) {
+          return cb(parseError);
+        }
         return cb(null, favorites);
       });
     }

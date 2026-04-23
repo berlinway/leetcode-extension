@@ -60,6 +60,20 @@ class TodayData {
 
 const todayData: TodayData = new TodayData();
 
+function formatError(error: any): string {
+  if (error instanceof Error) {
+    return error.stack || error.message;
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  try {
+    return JSON.stringify(error);
+  } catch (_) {
+    return String(error);
+  }
+}
+
 export class TodayDataProxy extends BABAProxy {
   static NAME = BabaStr.TodayDataProxy;
   constructor() {
@@ -103,7 +117,7 @@ export class TodayDataProxy extends BABAProxy {
         BABA.sendNotification(BabaStr.TreeData_searchTodayFinish);
       }
     } catch (error) {
-      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(error.toString());
+      BABA.getProxy(BabaStr.LogOutputProxy).get_log().appendLine(formatError(error));
       await ShowMessage("Failed to fetch today question. 请查看控制台信息~", OutPutType.error);
     }
   }

@@ -23,7 +23,13 @@ class Main {
     process.stdout.on("error", function (e) {
       if (e.code === "EPIPE") process.exit();
     });
-    configUtils.init(JSON.parse(process.env.ccagml || "{}"));
+    let lcptctx: any = {};
+    try {
+      lcptctx = JSON.parse(process.env.ccagml || "{}");
+    } catch (_) {
+      lcptctx = {};
+    }
+    configUtils.init(lcptctx);
     reply.init();
     storageUtils.init();
     chainMgr.init(corePlugin);

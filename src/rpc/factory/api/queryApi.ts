@@ -18,6 +18,12 @@ class QueryApi extends ApiBase {
   constructor() {
     super();
   }
+
+  private outputError(e: any, code: number = -1) {
+    const msg = e?.msg || e?.message || e?.toString?.() || "unknown error";
+    reply.info(JSON.stringify({ code, msg }));
+  }
+
   callArg(argv) {
     let argv_config = this.api_argv()
       .option("T", {
@@ -102,15 +108,16 @@ class QueryApi extends ApiBase {
   }
 
   call(argv) {
+    const that = this;
     sessionUtils.argv = argv;
     if (argv.a) {
       chainMgr.getChainHead().getTodayQuestion(function (e, result) {
-        if (e) return;
+        if (e) return that.outputError(e, -101);
         reply.info(JSON.stringify(result));
       });
     } else if (argv.b) {
       chainMgr.getChainHead().getUserContest(argv.b, function (e, result) {
-        if (e) return;
+        if (e) return that.outputError(e, -102);
         reply.info(JSON.stringify(result));
       });
     } else if (argv.c) {
@@ -135,7 +142,7 @@ class QueryApi extends ApiBase {
       });
     } else if (argv.d) {
       chainMgr.getChainHead().filterProblems(argv, function (e, problems) {
-        if (e) return reply.info(e);
+        if (e) return that.outputError(e, -103);
         let new_objcet: Array<any> = [];
         problems.forEach((element) => {
           let temp_ele: any = {};
@@ -152,7 +159,7 @@ class QueryApi extends ApiBase {
       if (argv.keyword.length > 0) {
         // show specific one
         chainMgr.getChainHead().getProblem(argv.keyword, !argv.dontTranslate, function (e, problem) {
-          if (e) return reply.info(e);
+          if (e) return that.outputError(e, -104);
           chainMgr.getChainHead().getHelpOnline(problem, argv.f, argv.g);
         });
       }
@@ -160,26 +167,26 @@ class QueryApi extends ApiBase {
       if (argv.keyword.length > 0) {
         // show specific one
         chainMgr.getChainHead().getProblem(argv.keyword, !argv.dontTranslate, function (e, problem) {
-          if (e) return reply.info(e);
+          if (e) return that.outputError(e, -105);
           chainMgr.getChainHead().getHintsOnline(problem, function (e, result) {
-            if (e) return;
+            if (e) return that.outputError(e, -106);
             reply.info(JSON.stringify({ code: 100, hints: result }));
           });
         });
       }
     } if (argv.i) {
       chainMgr.getChainHead().getRecentContest(function (e, result) {
-        if (e) return;
+        if (e) return that.outputError(e, -107);
         reply.info(JSON.stringify(result));
       });
     } if (argv.j) {
       chainMgr.getChainHead().getContestQuestion(argv.j, function (e, result) {
-        if (e) return;
+        if (e) return that.outputError(e, -108);
         reply.info(JSON.stringify(result));
       });
     } else if (argv.z) {
       chainMgr.getChainHead().getQueryZ(argv.z, function (e, result) {
-        if (e) return;
+        if (e) return that.outputError(e, -109);
         reply.info(JSON.stringify(result));
       });
     }
