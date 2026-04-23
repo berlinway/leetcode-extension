@@ -287,13 +287,11 @@ export class TreeDataService implements vscode.TreeDataProvider<TreeNodeModel> {
       qpOpiton.placeHolder = "请选择登录方式 正在登录中文版leetcode.cn";
     }
 
-    if (getLeetCodeEndpoint() == Endpoint.LeetCode) {
-      picks.push({
-        label: "LeetCode chrome copy curl(bash) ",
-        detail: "使用chrome复制最后一个graphql网络请求为curl请求,去掉复制内容中的换行符",
-        value: "curltype",
-      })
-    }
+    picks.push({
+      label: "LeetCode chrome copy curl(bash) ",
+      detail: "使用chrome复制最后一个graphql网络请求为curl请求,去掉复制内容中的换行符",
+      value: "curltype",
+    });
     picks.push(
       {
         label: "Third-Party: GitHub",

@@ -472,7 +472,11 @@ function cnSelectSolution(edges, cb) {
 }
 
 function signOpts(opts: any, user: any) {
-  opts.headers.Cookie = "LEETCODE_SESSION=" + user.sessionId + ";csrftoken=" + user.sessionCSRF + ";";
+  if (!user) {
+    return;
+  }
+  const rawCookie = user.rawCookie;
+  opts.headers.Cookie = rawCookie || ("LEETCODE_SESSION=" + user.sessionId + ";csrftoken=" + user.sessionCSRF + ";");
   opts.headers["X-CSRFToken"] = user.sessionCSRF;
   opts.headers["X-Requested-With"] = "XMLHttpRequest";
   opts.headers['x-csrftoken'] = user.sessionCSRF;
